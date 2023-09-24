@@ -8,7 +8,7 @@
                 class="dark-input"
                 v-model="tempName"
                 placeholder="Node Name"
-                v-click-outside="doneRenaming"
+                ref="tempNameRef"
                 @keydown.enter="doneRenaming"
             />
 
@@ -51,8 +51,8 @@
                         to="#sidebar"
                         v-if="
                             plugin.sidebar.nodeId === node.id &&
-                            plugin.sidebar.optionName === name &&
-                            option.sidebarComponent
+                                plugin.sidebar.optionName === name &&
+                                option.sidebarComponent
                         "
                     >
                         <component
@@ -84,23 +84,18 @@
 <script lang="ts">
 import { Options, Vue, Prop, Inject } from "vue-property-decorator";
 
-// @ts-ignore
-import ClickOutside from "v-click-outside";
+import { onClickOutside } from "@vueuse/core";
 
 import { ViewPlugin } from "../../viewPlugin";
 import { IViewNode } from "../../../types";
 import { sanitizeName } from "../../utility/cssNames";
+import { ref } from "vue";
 
 interface IPosition {
     x: number;
     y: number;
 }
 
-@Options({
-    directives: {
-        ClickOutside: ClickOutside.directive,
-    },
-})
 export default class NodeView extends Vue {
     @Prop({ type: Object })
     node!: IViewNode;
@@ -119,14 +114,16 @@ export default class NodeView extends Vue {
     renaming = false;
     tempName = "";
 
+    tempNameRef = ref<HTMLInputElement | null>(null);
+
     contextMenu = {
         show: false,
         x: 0,
         y: 0,
         items: [
             { value: "rename", label: "Rename" },
-            { value: "delete", label: "Delete" },
-        ],
+            { value: "delete", label: "Delete" }
+        ]
     };
 
     get classes() {
@@ -136,7 +133,7 @@ export default class NodeView extends Vue {
             "--dragging": !!this.draggingStartPoint,
             "--two-column": !!this.node.twoColumn,
             [`--type-${sanitizeName(this.node.type)}`]: true,
-            [this.node.customClasses]: true,
+            [this.node.customClasses]: true
         };
     }
 
@@ -144,7 +141,7 @@ export default class NodeView extends Vue {
         return {
             top: `${this.node.position.y}px`,
             left: `${this.node.position.x}px`,
-            width: `${this.node.width}px`,
+            width: `${this.node.width}px`
         };
     }
 
@@ -154,6 +151,7 @@ export default class NodeView extends Vue {
         this.node.events.addOption.addListener(this, () => this.update());
         this.node.events.removeOption.addListener(this, () => this.update());
         this.plugin.hooks.renderNode.execute(this);
+        onClickOutside(this.tempNameRef, this.doneRenaming);
     }
 
     updated() {
@@ -181,12 +179,12 @@ export default class NodeView extends Vue {
 
         this.selectedNodeViews.forEach((elem: any) => {
             elem.draggingStartPoint = {
-                  x: ev.screenX,
-                  y: ev.screenY,
+                x: ev.screenX,
+                y: ev.screenY
             };
             elem.draggingStartPosition = {
-                  x: elem.node.position.x,
-                  y: elem.node.position.y,
+                x: elem.node.position.x,
+                y: elem.node.position.y
             };
             document.addEventListener("mousemove", elem.handleMove);
             document.addEventListener("mouseup", elem.stopDrag);

@@ -2,7 +2,7 @@
 <div
     :class="['dark-select', { '--open': open }]"
     @click="open = !open"
-    v-click-outside="() => { open = false; }"
+    ref="selectOptionRef"
 >
     <div class="__selected">
         <div class="__text">{{ selectedText }}</div>
@@ -28,9 +28,8 @@
 import { Options, Vue, Prop } from "vue-property-decorator";
 import Arrow from "./Arrow.vue";
 import { INodeOption, INodeInterface } from "../../baklavajs-core/types";
-
-// @ts-ignore
-import ClickOutside from "v-click-outside";
+import { onClickOutside } from "@vueuse/core";
+import { ref } from "vue";
 
 interface IAdvancedItem {
     text: string;
@@ -61,6 +60,8 @@ export default class SelectOption extends Vue {
     @Prop({ type: Object })
     option!: INodeOption|INodeInterface;
 
+    selectOptionRef = ref<HTMLElement | null>(null);
+
     get isAdvancedMode() {
         return !this.items.every((i) => typeof(i) === "string");
     }
@@ -81,6 +82,7 @@ export default class SelectOption extends Vue {
         this.option.events.updated.addListener(this, () => {
             this.items = this.option.items || [];
         });
+        onClickOutside(this.selectOptionRef, () => { this.open = false; })
     }
 
     beforeDestroy() {

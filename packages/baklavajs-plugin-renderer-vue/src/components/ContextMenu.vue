@@ -1,5 +1,5 @@
 <template>
-    <div :class="classes" :style="styles" v-show="modelValue" v-click-outside="onClickOutside">
+    <div :class="classes" :style="styles" v-show="modelValue" ref="contextMenuRef">
         <template v-for="(item, index) in _items">
             <div v-if="item.isDivider" :key="`divider-${index}`" class="divider"></div>
 
@@ -38,9 +38,8 @@
 
 <script lang="ts">
 import { Options, Prop, Vue, Watch } from "vue-property-decorator";
-
-// @ts-ignore
-import ClickOutside from "v-click-outside";
+import { onClickOutside } from "@vueuse/core";
+import { ref } from "vue";
 
 export interface IMenuItem {
     label?: string;
@@ -52,9 +51,6 @@ export interface IMenuItem {
 }
 
 @Options({
-    directives: {
-        ClickOutside: ClickOutside.directive,
-    },
     emits: ["update:modelValue", "click"]
 })
 export default class ContextMenu extends Vue {
@@ -85,6 +81,8 @@ export default class ContextMenu extends Vue {
     @Prop({ type: Boolean, default: false })
     flippable!: boolean;
 
+    contextMenuRef = ref<HTMLElement | null>(null);
+
     get styles() {
         const s: any = {};
         if (!this.isNested) {
@@ -99,7 +97,7 @@ export default class ContextMenu extends Vue {
             "dark-context-menu": true,
             "--flipped-x": this.flippedX,
             "--flipped-y": this.flippedY,
-            "--nested": this.isNested,
+            "--nested": this.isNested
         };
     }
 
@@ -120,6 +118,10 @@ export default class ContextMenu extends Vue {
             this.$emit("click", item.value);
             this.$emit("update:modelValue", false);
         }
+    }
+
+    mounted() {
+        onClickOutside(this.contextMenuRef, this.onClickOutside);
     }
 
     onChildClick(value: string) {
